@@ -15,3 +15,5 @@ deployment:
     - /bin/cp php-app/pedido-crear.php $DEPLOYPATH
     - /bin/cp php-app/pedido.php $DEPLOYPATH
     - /bin/cp php-app/.htaccess $DEPLOYPATH
+      - /bin/cp php-app/pedidos-admin.php $DEPLOYPATH
+      - /bin/cp php-app/pedido-actualizar.php $DEPLOYPATH
