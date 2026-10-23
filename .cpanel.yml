@@ -28,3 +28,4 @@ deployment:
       - /bin/cp php-app/categoria-guardar.php $DEPLOYPATH
       - /bin/cp php-app/usuarios-admin.php $DEPLOYPATH
       - /bin/cp php-app/usuario-guardar.php $DEPLOYPATH
+      - /bin/cp php-app/dashboard-admin.php $DEPLOYPATH
