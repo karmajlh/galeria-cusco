@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+*.tsbuildinfo
+*.log
+php-app/config.php
+php-app/.env
+dist/*.zip
+src/generated/
+.vercel/
+.netlify/
+prisma/*.pem
