@@ -10,4 +10,5 @@ deployment:
     - /bin/cp php-app/login.php $DEPLOYPATH
     - /bin/cp php-app/logout.php $DEPLOYPATH
     - /bin/cp php-app/panel.php $DEPLOYPATH
+    - /bin/cp php-app/producto-guardar.php $DEPLOYPATH
     - /bin/cp php-app/.htaccess $DEPLOYPATH
