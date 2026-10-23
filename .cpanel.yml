@@ -19,3 +19,5 @@ deployment:
       - /bin/cp php-app/pedido-actualizar.php $DEPLOYPATH
       - /bin/cp php-app/tiendas-admin.php $DEPLOYPATH
       - /bin/cp php-app/tienda-guardar.php $DEPLOYPATH
+      - /bin/cp php-app/tienda-editar.php $DEPLOYPATH
+      - /bin/cp php-app/tienda-actualizar.php $DEPLOYPATH
