@@ -3,6 +3,7 @@ name: Deploy PHP to Galeria Cusco
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
