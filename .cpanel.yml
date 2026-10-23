@@ -1,0 +1,4 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/mixshopc/public_html/galeriacusco.info.gf/
+    - /bin/cp -R php-app/. $DEPLOYPATH
