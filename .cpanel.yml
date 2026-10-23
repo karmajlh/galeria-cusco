@@ -21,3 +21,5 @@ deployment:
       - /bin/cp php-app/tienda-guardar.php $DEPLOYPATH
       - /bin/cp php-app/tienda-editar.php $DEPLOYPATH
       - /bin/cp php-app/tienda-actualizar.php $DEPLOYPATH
+      - /bin/cp php-app/producto-editar.php $DEPLOYPATH
+      - /bin/cp php-app/producto-actualizar.php $DEPLOYPATH
