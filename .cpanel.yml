@@ -24,3 +24,5 @@ deployment:
       - /bin/cp php-app/producto-editar.php $DEPLOYPATH
       - /bin/cp php-app/producto-actualizar.php $DEPLOYPATH
       - /bin/cp php-app/productos-admin.php $DEPLOYPATH
+      - /bin/cp php-app/categorias-admin.php $DEPLOYPATH
+      - /bin/cp php-app/categoria-guardar.php $DEPLOYPATH
