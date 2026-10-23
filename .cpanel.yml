@@ -17,3 +17,5 @@ deployment:
     - /bin/cp php-app/.htaccess $DEPLOYPATH
       - /bin/cp php-app/pedidos-admin.php $DEPLOYPATH
       - /bin/cp php-app/pedido-actualizar.php $DEPLOYPATH
+      - /bin/cp php-app/tiendas-admin.php $DEPLOYPATH
+      - /bin/cp php-app/tienda-guardar.php $DEPLOYPATH
