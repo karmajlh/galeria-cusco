@@ -1,5 +1,10 @@
+---
 deployment:
   tasks:
     - export DEPLOYPATH=/home/mixshopc/public_html/galeriacusco.info.gf/
-    - /bin/cp -R php-app/* $DEPLOYPATH
-    - /bin/cp php-app/.htaccess $DEPLOYPATH.htaccess
+    - /bin/cp php-app/index.php $DEPLOYPATH
+    - /bin/cp php-app/tienda.php $DEPLOYPATH
+    - /bin/cp php-app/producto.php $DEPLOYPATH
+    - /bin/cp php-app/agregar-carrito.php $DEPLOYPATH
+    - /bin/cp php-app/carrito.php $DEPLOYPATH
+    - /bin/cp php-app/.htaccess $DEPLOYPATH
