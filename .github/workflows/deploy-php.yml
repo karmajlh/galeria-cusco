@@ -15,7 +15,7 @@ jobs:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
-          source: "php-app/*.php,php-app/.htaccess"
+          source: "php-app"
           target: "/home/mixshopc/public_html/galeriacusco.info.gf/"
           strip_components: 1
 
