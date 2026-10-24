@@ -1,26 +1,21 @@
 <?php
 declare(strict_types=1);
-
-$configPath = __DIR__ . '/config.php';
-if (!is_file($configPath)) {
-    http_response_code(500);
-    exit('Falta config.php. Copia config.example.php y completa los datos del hosting.');
-}
-$config = require $configPath;
+require __DIR__.'/galeria-core.php';
+$category=max(0,(int)($_GET['categoria']??0)); $search=mb_substr(trim((string)($_GET['q']??'')),0,100);
 try {
-    $pdo = new PDO(
-        sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $config['host'], $config['port'], $config['database']),
-        $config['user'],
-        $config['password'],
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC],
-    );
-    $stores = $pdo->query("SELECT t.id, t.nombre, t.slug, t.eslogan, t.ciudad, COALESCE(c.nombre, 'Tiendas') AS categoria FROM tiendas t LEFT JOIN galeria_categorias c ON c.id = t.galeria_categoria_id AND c.estado = 'activa' WHERE t.estado = 'activa' ORDER BY c.orden, c.nombre, t.nombre")->fetchAll();
-} catch (Throwable $error) {
-    http_response_code(500);
-    exit('No se pudo conectar con la base de datos. Verifica config.php.');
-}
-function h(string $value): string { return htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); }
-?><!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Galería Virtual Cusco</title><style>body{font-family:system-ui;margin:0;background:#f6f3ee;color:#24211e}main{max-width:1000px;margin:auto;padding:40px 20px}h1{font-size:clamp(2rem,5vw,4rem)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}.card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 4px 18px #0001}.tag{color:#886c42}</style></head>
-<body><main><p class="tag">GALERÍA VIRTUAL CUSCO</p><h1>Tiendas locales, cerca de ti.</h1><p>Descubre comercios y productos de Cusco.</p><?php $category = null; foreach ($stores as $store): if ($category !== $store['categoria']): if ($category !== null): ?></section><?php endif; $category = $store['categoria']; ?><h2><?= h($category) ?></h2><section class="grid"><?php endif; ?><article class="card"><h2><?= h($store['nombre']) ?></h2><p><?= h($store['eslogan'] ?? 'Comercio local cusqueño') ?></p><p class="tag"><?= h($store['ciudad']) ?></p><a href="tienda.php?slug=<?= urlencode($store['slug']) ?>">Ver tienda →</a></article><?php endforeach; if ($category !== null): ?></section><?php endif; ?></main></body></html>
+    $db=gallery_db();
+    $categories=$db->query("SELECT c.id,c.nombre,COUNT(t.id) AS cantidad FROM galeria_categorias c LEFT JOIN tiendas t ON t.galeria_categoria_id=c.id AND t.estado='activa' WHERE c.estado='activa' GROUP BY c.id,c.nombre,c.orden ORDER BY c.orden,c.nombre")->fetchAll();
+    $sql="SELECT t.id,t.nombre,t.slug,t.eslogan,t.ciudad,t.direccion,t.telefono_whatsapp,c.nombre AS categoria FROM tiendas t LEFT JOIN galeria_categorias c ON c.id=t.galeria_categoria_id WHERE t.estado='activa' AND (c.estado='activa' OR t.galeria_categoria_id IS NULL)";
+    $params=[];
+    if ($category) { $sql.=' AND c.id=?'; $params[]=$category; }
+    if ($search!=='') { $sql.=' AND (t.nombre LIKE ? OR t.eslogan LIKE ? OR t.ciudad LIKE ?)'; $term='%'.$search.'%'; array_push($params,$term,$term,$term); }
+    $q=$db->prepare($sql.' ORDER BY t.nombre'); $q->execute($params); $stores=$q->fetchAll();
+} catch (Throwable $e) { http_response_code(503); exit('La galería no está disponible temporalmente. Intenta nuevamente.'); }
+?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Galería Cusco · Tiendas locales</title><meta name="description" content="Encuentra tiendas de Cusco por categoría y descubre sus catálogos de productos."><link rel="stylesheet" href="galeria.css"></head><body>
+<header><nav><a class="brand" href="index.php">GALERÍA CUSCO</a><div><a href="seguimiento.php">Mis pedidos</a> · <a href="login.php">Acceso de tiendas</a></div></nav></header>
+<main><section class="hero"><p class="eyebrow">Comercios de nuestra ciudad</p><h1>Encuentra tu próxima tienda favorita.</h1><p class="muted">Explora las categorías, conoce las tiendas de Cusco y visita sus catálogos.</p></section>
+<form class="search" method="get"><input type="hidden" name="categoria" value="<?=$category?>"><input aria-label="Buscar tiendas por nombre o ciudad" name="q" value="<?=gh($search)?>" maxlength="100" placeholder="Busca una tienda, su slogan o ciudad…"><button>Buscar tiendas</button></form>
+<nav class="categories" aria-label="Categorías de tiendas" style="padding:0"><a class="<?=$category===0?'active':''?>" <?=!$category?'aria-current="page"':''?> href="?<?=gh(http_build_query(['q'=>$search]))?>">Todas las tiendas</a><?php foreach ($categories as $c): ?><a class="<?=$category===(int)$c['id']?'active':''?>" <?=$category===(int)$c['id']?'aria-current="page"':''?> href="?<?=gh(http_build_query(['categoria'=>$c['id'],'q'=>$search]))?>"><?=gh($c['nombre'])?> (<?=$c['cantidad']?>)</a><?php endforeach ?></nav>
+<p class="muted"><?=count($stores)?> tiendas encontradas</p><section class="grid" aria-label="Catálogo de tiendas">
+<?php foreach ($stores as $s): ?><article class="card"><span class="tag"><?=gh($s['categoria']??'Comercio local')?></span><h2><?=gh($s['nombre'])?></h2><p><?=gh($s['eslogan']??'')?></p><p class="muted"><?=gh($s['ciudad'])?><br><?=gh($s['direccion']??'')?></p><div class="actions"><a class="button" href="tienda.php?slug=<?=urlencode($s['slug'])?>">Ver catálogo →</a><?php $phone=preg_replace('/\D/','',$s['telefono_whatsapp']); if ($phone): ?><a href="https://wa.me/<?=gh($phone)?>">WhatsApp</a><?php endif ?></div></article><?php endforeach ?>
+<?php if (!$stores): ?><div class="card"><h2>No encontramos tiendas</h2><p>Prueba otra categoría o cambia la búsqueda.</p><a href="index.php">Ver todas las tiendas</a></div><?php endif ?></section></main></body></html>

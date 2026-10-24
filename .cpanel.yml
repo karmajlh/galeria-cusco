@@ -34,3 +34,9 @@ deployment:
       - /bin/cp php-app/galeria-categoria-guardar.php $DEPLOYPATH
       - /bin/cp php-app/tienda-galeria-categoria.php $DEPLOYPATH
       - /bin/cp php-app/tienda-panel.php $DEPLOYPATH
+
+      - /bin/cp php-app/galeria-admin.php $DEPLOYPATH
+
+      - /bin/cp php-app/galeria-core.php $DEPLOYPATH
+
+      - /bin/cp php-app/galeria.css $DEPLOYPATH
