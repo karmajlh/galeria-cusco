@@ -30,6 +30,27 @@ jobs:
           test ! -e php-app/config.php
           echo "admin_sha=$(sha256sum php-app/galeria-admin.php | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve cPanel document root
+        id: destination
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          capture_stdout: true
+          script: |
+            set -eu
+            /usr/local/cpanel/bin/uapi --output=json DomainInfo single_domain_data domain=galeriacusco.info.gf | python3 -c '
+            import json, os, re, sys
+            result=json.load(sys.stdin).get("result", {})
+            data=result.get("data") or {}
+            path=data.get("documentroot", "")
+            if result.get("status") != 1 or not re.fullmatch(r"/home[0-9]*/[a-zA-Z0-9_-]+/public_html/galeriacusco\.info\.gf/?",path):
+                sys.exit("No se pudo validar la raiz del dominio con cPanel; no se copiaron archivos.")
+            if not os.path.isfile(os.path.join(path,"config.php")):
+                sys.exit("La raiz informada no contiene config.php; no se copiaron archivos.")
+            print(path.rstrip("/"))'
+
       - name: Deploy PHP application
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -37,7 +58,7 @@ jobs:
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           source: "php-app/*,php-app/.htaccess"
-          target: "/home/mixshopc/public_html/galeriacusco.info.gf/"
+          target: ${{ steps.destination.outputs.stdout }}
           strip_components: 1
           overwrite: true
 
@@ -49,7 +70,7 @@ jobs:
           key: ${{ secrets.CPANEL_SSH_KEY }}
           script: |
             set -eu
-            cd /home/mixshopc/public_html/galeriacusco.info.gf
+            cd '${{ steps.destination.outputs.stdout }}'
             pwd -P
             test -s galeria-admin.php
             test -s galeria-core.php
