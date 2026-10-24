@@ -30,3 +30,6 @@ deployment:
       - /bin/cp php-app/usuario-guardar.php $DEPLOYPATH
       - /bin/cp php-app/dashboard-admin.php $DEPLOYPATH
       - /bin/cp php-app/seguimiento.php $DEPLOYPATH
+      - /bin/cp php-app/galeria-categorias-admin.php $DEPLOYPATH
+      - /bin/cp php-app/galeria-categoria-guardar.php $DEPLOYPATH
+      - /bin/cp php-app/tienda-galeria-categoria.php $DEPLOYPATH
