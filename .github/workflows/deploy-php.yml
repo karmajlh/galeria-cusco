@@ -5,6 +5,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: galeria-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,13 +19,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check deployment files
+        id: files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s php-app/galeria-admin.php
+          test -s php-app/galeria-core.php
+          test -s php-app/galeria.css
+          test ! -e php-app/config.php
+          echo "admin_sha=$(sha256sum php-app/galeria-admin.php | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
       - name: Deploy PHP application
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
-          source: "php-app"
+          source: "php-app/*,php-app/.htaccess"
           target: "/home/mixshopc/public_html/galeriacusco.info.gf/"
           strip_components: 1
+          overwrite: true
+
+      - name: Verify deployed files
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          script: |
+            set -eu
+            cd /home/mixshopc/public_html/galeriacusco.info.gf
+            pwd -P
+            test -s galeria-admin.php
+            test -s galeria-core.php
+            test -s galeria.css
+            printf '%s  galeria-admin.php\n' '${{ steps.files.outputs.admin_sha }}' | sha256sum -c -
+            ls -ld . galeria-admin.php galeria-core.php galeria.css
 
