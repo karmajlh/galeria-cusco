@@ -51,6 +51,23 @@ jobs:
                 sys.exit("La raiz informada no contiene config.php; no se copiaron archivos.")
             print(path.rstrip("/"))'
 
+      - name: Validate SSH access and destination
+        id: validated
+        env:
+          REMOTE_OUTPUT: ${{ steps.destination.outputs.stdout }}
+        run: |
+          python3 - <<'PY'
+          import os, re, sys
+          output = os.environ['REMOTE_OUTPUT']
+          if 'Shell access is not enabled' in output:
+              sys.exit('El hosting tiene SSH/shell deshabilitado. Solicita su activacion al proveedor. No se copiaron archivos.')
+          paths = [line.strip() for line in output.splitlines() if re.fullmatch(r'/home[0-9]*/[a-zA-Z0-9_-]+/public_html/galeriacusco\.info\.gf', line.strip())]
+          if len(paths) != 1:
+              sys.exit('No se recibio una ruta valida de cPanel. Despliegue detenido.')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('path=' + paths[0] + '\n')
+          PY
+
       - name: Deploy PHP application
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -58,23 +75,37 @@ jobs:
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           source: "php-app/*,php-app/.htaccess"
-          target: ${{ steps.destination.outputs.stdout }}
+          target: ${{ steps.validated.outputs.path }}
           strip_components: 1
           overwrite: true
 
       - name: Verify deployed files
+        id: verify
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
+          capture_stdout: true
           script: |
             set -eu
-            cd '${{ steps.destination.outputs.stdout }}'
+            cd '${{ steps.validated.outputs.path }}'
             pwd -P
             test -s galeria-admin.php
             test -s galeria-core.php
             test -s galeria.css
             printf '%s  galeria-admin.php\n' '${{ steps.files.outputs.admin_sha }}' | sha256sum -c -
             ls -ld . galeria-admin.php galeria-core.php galeria.css
+            echo 'GALERIA_VERIFIED_${{ github.sha }}'
+
+      - name: Require verification receipt
+        env:
+          REMOTE_OUTPUT: ${{ steps.verify.outputs.stdout }}
+          EXPECTED: GALERIA_VERIFIED_${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          if os.environ['EXPECTED'] not in os.environ['REMOTE_OUTPUT'].splitlines():
+              sys.exit('El servidor no confirmo la verificacion de archivos. No se considera publicado.')
+          PY
 
